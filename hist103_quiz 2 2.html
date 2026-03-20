@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HIST 103 Midterm Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #1a1a2e; --parchment: #f5f0e8; --parchment-dark: #ede5d0;
+    --accent: #8b1a1a; --gold: #b8860b; --gold-light: #d4a017;
+    --muted: #6b6258; --card-bg: #faf6ee; --border: #c8b89a;
+    --success-bg: #d4edda; --success-text: #1a5c2a;
+    --fail-bg: #f8d7da; --fail-text: #721c24;
+    --partial-bg: #fff3cd; --partial-text: #856404;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--parchment); color: var(--ink); min-height: 100vh; padding: 2rem 1rem; background-image: repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(139,26,26,0.06) 27px, rgba(139,26,26,0.06) 28px); }
+  .container { max-width: 720px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid var(--accent); }
+  header h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--accent); margin-bottom: 0.25rem; }
+  header p { font-size: 0.85rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1.5rem; }
+  .mode-card { background: var(--card-bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 1.1rem 0.75rem; cursor: pointer; text-align: center; transition: border-color 0.15s, background 0.15s; }
+  .mode-card:hover { border-color: var(--accent); background: var(--parchment-dark); }
+  .mode-card.active { border-color: var(--accent); background: rgba(139,26,26,0.08); }
+  .mode-card .icon { font-size: 1.4rem; margin-bottom: 0.35rem; }
+  .mode-card .label { font-size: 0.85rem; font-weight: 500; }
+  .mode-card .desc { font-size: 0.72rem; color: var(--muted); margin-top: 0.15rem; }
+  .start-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 1.75rem; text-align: center; }
+  .start-card p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.25rem; }
+  .score-bar { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem 1.2rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--muted); gap: 1rem; }
+  .score-bar strong { font-size: 1rem; color: var(--ink); }
+  .progress-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.4s; }
+  .streak { color: var(--gold); font-weight: 500; white-space: nowrap; min-width: 80px; text-align: right; }
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 2rem; position: relative; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--accent); border-radius: 14px 14px 0 0; }
+  .mode-badge { display: inline-block; font-size: 0.68rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 2px 8px; margin-bottom: 0.75rem; }
+  .q-num { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.5rem; }
+  .question-text { font-size: 1.08rem; line-height: 1.7; color: var(--ink); margin-bottom: 1.5rem; white-space: pre-wrap; }
+  .options-grid { display: grid; gap: 0.65rem; }
+  .option-btn { background: var(--parchment); border: 1.5px solid var(--border); border-radius: 10px; padding: 0.8rem 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.92rem; color: var(--ink); cursor: pointer; text-align: left; line-height: 1.45; transition: border-color 0.12s, background 0.12s, transform 0.08s; }
+  .option-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--parchment-dark); transform: translateX(3px); }
+  .option-btn:disabled { cursor: default; transform: none; }
+  .option-btn.correct { background: var(--success-bg); border-color: #28a745; color: var(--success-text); }
+  .option-btn.wrong { background: var(--fail-bg); border-color: #dc3545; color: var(--fail-text); }
+  .sa-wrap { display: flex; flex-direction: column; gap: 0.75rem; }
+  textarea { width: 100%; background: var(--parchment); border: 1.5px solid var(--border); border-radius: 10px; padding: 0.85rem 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.92rem; color: var(--ink); resize: vertical; min-height: 120px; line-height: 1.6; outline: none; transition: border-color 0.15s; }
+  textarea:focus { border-color: var(--accent); }
+  .feedback { margin-top: 1.2rem; padding: 0.9rem 1.1rem; border-radius: 10px; font-size: 0.88rem; line-height: 1.65; display: none; }
+  .feedback.show { display: block; }
+  .feedback.correct { background: var(--success-bg); color: var(--success-text); border: 1px solid #28a745; }
+  .feedback.wrong { background: var(--fail-bg); color: var(--fail-text); border: 1px solid #dc3545; }
+  .feedback.partial { background: var(--partial-bg); color: var(--partial-text); border: 1px solid var(--gold); }
+  .key-points { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(0,0,0,0.12); }
+  .key-points p { font-weight: 500; margin-bottom: 0.4rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .key-points ul { padding-left: 1.1rem; font-size: 0.85rem; }
+  .key-points ul li { margin-bottom: 0.3rem; }
+  .actions { margin-top: 1.4rem; display: flex; gap: 0.65rem; flex-wrap: wrap; }
+  .btn { font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; border: 1.5px solid; transition: opacity 0.12s, transform 0.08s; }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.87; }
+  .btn-secondary { background: transparent; border-color: var(--border); color: var(--ink); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+  .summary-card { text-align: center; padding: 2.5rem 1.5rem; }
+  .summary-grade { font-family: 'Playfair Display', serif; font-size: 4.5rem; color: var(--accent); margin: 0.5rem 0; }
+  .summary-label { font-size: 1rem; color: var(--muted); margin-bottom: 1.75rem; }
+  .summary-stats { display: flex; gap: 2rem; justify-content: center; margin-bottom: 1.75rem; flex-wrap: wrap; }
+  .stat .val { font-size: 1.5rem; font-weight: 500; color: var(--ink); }
+  .stat .lbl { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  @media(max-width:500px){ .setup-grid{grid-template-columns:1fr;} header h1{font-size:1.75rem;} }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>HIST 103 Midterm Quiz</h1>
+    <p>Spring 2026 &mdash; One question at a time</p>
+  </header>
+
+  <div id="setup">
+    <div class="setup-grid">
+      <div class="mode-card active" data-mode="mc" onclick="selectMode(this)">
+        <div class="icon">🏛️</div>
+        <div class="label">Multiple Choice</div>
+        <div class="desc">25 questions, 4 options</div>
+      </div>
+      <div class="mode-card" data-mode="id" onclick="selectMode(this)">
+        <div class="icon">📜</div>
+        <div class="label">ID Terms</div>
+        <div class="desc">All 13 terms, self-grade</div>
+      </div>
+      <div class="mode-card" data-mode="mixed" onclick="selectMode(this)">
+        <div class="icon">🎲</div>
+        <div class="label">Mixed</div>
+        <div class="desc">MC + ID + essay prep</div>
+      </div>
+    </div>
+    <div class="start-card">
+      <p>Covers all 13 ID terms, key dates, essay arguments &bull; Questions shuffle every session</p>
+      <button class="btn btn-primary" onclick="startQuiz()" style="font-size:1rem;padding:0.7rem 2.5rem;">Start Quiz</button>
+    </div>
+  </div>
+
+  <div id="quiz" style="display:none;">
+    <div class="score-bar">
+      <div>Score: <strong id="score-num">0</strong> / <span id="total-num">0</span></div>
+      <div class="progress-wrap"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+      <div class="streak" id="streak"></div>
+    </div>
+    <div class="card">
+      <div class="mode-badge" id="badge">Multiple Choice</div>
+      <div class="q-num" id="qnum">Question 1</div>
+      <div class="question-text" id="qtext"></div>
+      <div id="mc-opts" class="options-grid" style="display:none;"></div>
+      <div id="sa-area" class="sa-wrap" style="display:none;">
+        <textarea id="user-ans" placeholder="Write your answer here..."></textarea>
+        <button class="btn btn-primary" id="sa-btn">Submit Answer</button>
+      </div>
+      <div class="feedback" id="fb"></div>
+      <div class="actions" id="acts" style="display:none;">
+        <button class="btn btn-primary" id="nxt" onclick="nextQ()">Next Question →</button>
+        <button class="btn btn-secondary" onclick="endQuiz()">End Session</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="summary" style="display:none;">
+    <div class="card summary-card">
+      <div style="font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Session Complete</div>
+      <div class="summary-grade" id="sg"></div>
+      <div class="summary-label" id="sl"></div>
+      <div class="summary-stats" id="ss"></div>
+      <button class="btn btn-primary" onclick="restart()">New Session</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MC = [
+  {q:"Which Native leader led the 1763 uprising against British rule in the Great Lakes region?",opts:["A) Wahunsenacah","B) Opechancanough","C) Pontiac","D) Neolin"],ans:2,exp:"Pontiac, an Ottawa war leader, led the inter-tribal revolt in 1763. Neolin (the Delaware Prophet) inspired the spiritual dimension, but Pontiac led the military campaign — including the siege of Fort Detroit."},
+  {q:"What was the PRIMARY reason indentured servitude declined in Virginia after 1676?",opts:["A) England banned the practice by law","B) Planters feared freed servants after Bacon's Rebellion","C) Indentured servants earned too much upon completion","D) African slaves proved too expensive to import"],ans:1,exp:"Bacon's Rebellion demonstrated the danger of a discontented, armed class of freed servants. Virginia's elite responded by shifting to race-based chattel slavery and improving conditions for poor free whites to prevent another multiracial coalition."},
+  {q:"The 1661 Barbados Slave Code was significant because it:",opts:["A) Freed all indentured servants in the Caribbean","B) Established the Middle Passage trade route","C) Became the legal model for mainland colonial slave codes","D) Banned importation of enslaved Africans after 1680"],ans:2,exp:"The Barbados Slave Code defined enslaved people as owner property, empowered government to search for runaways, and set punishments. It directly became the template that Virginia and other colonies used when writing their own slave legislation."},
+  {q:"Anne Hutchinson was banished from Massachusetts Bay Colony primarily because she:",opts:["A) Was accused of witchcraft during the Salem trials","B) Claimed direct revelation from God, threatening theocratic authority","C) Refused to pay taxes imposed by the colonial assembly","D) Advocated for Native American rights"],ans:1,exp:"Hutchinson's 'Antinomianism' — arguing for a direct personal relationship with God over clergy — threatened both the ministers' interpretive authority and colonial gender norms. John Winthrop tried and banished her in 1638."},
+  {q:"What event DIRECTLY caused the Royal Proclamation of 1763?",opts:["A) The Stamp Act crisis","B) The Boston Massacre","C) Pontiac's War proving how dangerous frontier conflict could be","D) The French & Indian War peace treaty alone"],ans:2,exp:"While the Peace of Paris ended the French & Indian War, it was Pontiac's War that proved to Britain how dangerous unchecked frontier conflict was, pushing them to issue the Proclamation forbidding westward settlement to stabilize Native relations."},
+  {q:"Thomas Paine's Common Sense (1776) was distinctive mainly because it:",opts:["A) Was written in Latin for educated colonists","B) Argued for reconciliation with the British Crown","C) Made the case for independence using language accessible to ordinary colonists","D) Was the first document to invoke natural rights theory"],ans:2,exp:"Paine deliberately wrote for ordinary colonists using biblical references and plain language. He sold 100,000+ copies in months and is credited with shifting mass public opinion from hoping for reconciliation to supporting independence."},
+  {q:"Sullivan's Expedition of 1779 was ordered by Washington in response to:",opts:["A) British naval blockades of New York ports","B) Haudenosaunee raids on American frontier settlements","C) Loyalist uprisings in Pennsylvania","D) The capture of Fort Ticonderoga by the British"],ans:1,exp:"British-allied Haudenosaunee (primarily Seneca, Cayuga, and Mohawk) were raiding American frontier settlements. Washington ordered Sullivan to systematically destroy their villages — ~40 were burned, earning Washington the Seneca name 'Town Destroyer.'"},
+  {q:"The colonial doctrine of 'no taxation without representation' was rooted in which English tradition?",opts:["A) The English Bill of Rights (1688) requiring parliamentary consent for taxation","B) John Locke's First Treatise of Government","C) French Enlightenment philosophy","D) The Mayflower Compact of 1620"],ans:0,exp:"The 1688 English Bill of Rights explicitly required parliamentary consent for taxation. Colonists saw themselves as Englishmen entitled to these rights, making the Stamp Act (1765) a fundamental violation of their constitutional protections."},
+  {q:"The death of Jane McCrea (1777) became politically significant because:",opts:["A) She was the first woman to serve in the Continental Army","B) Her murder by British-allied Native escorts became major Patriot propaganda","C) She negotiated a peace treaty between colonists and the Iroquois","D) She was the wife of General John Sullivan"],ans:1,exp:"McCrea's murder became massive Patriot propaganda — symbolizing British brutality and their use of 'savage' allies. It galvanized fence-sitters to join the Patriot cause and contributed to the momentum leading to the crucial American victory at Saratoga."},
+  {q:"The Articles of Confederation's most critical structural weakness was:",opts:["A) It gave too much power to a federal executive branch","B) It allowed states to maintain competing private armies","C) Congress had no power to levy taxes from the states","D) It required only a simple majority for all major legislation"],ans:2,exp:"Congress could only request money from states but had no enforcement mechanism. Combined with no executive branch and the requirement of unanimous agreement for amendments, this made the government unable to handle Shays' Rebellion or national debt — leading to the Constitutional Convention of 1787."},
+  {q:"The Great Awakening's most significant political legacy was:",opts:["A) Establishing the Anglican Church as dominant in all colonies","B) Planting anti-authoritarian, proto-democratic sentiment that fed into the Revolution","C) Ending religious tolerance in New England permanently","D) Strengthening the alliance between church and colonial governments"],ans:1,exp:"The Great Awakening's 'New Lights' challenged established authority and promoted the idea that all people have a direct relationship with God — a natural rights implication. This distrust of elites became one of the ideological seeds of the American Revolution."},
+  {q:"The Stono Rebellion (1739) occurred in South Carolina partly because:",opts:["A) The task system gave enslaved people too much unsupervised free time","B) A majority-enslaved population made white colonists fear uprisings, while the task system created organizing opportunities","C) The gang labor system had recently been abolished","D) Britain had promised freedom to enslaved people who rebelled"],ans:1,exp:"South Carolina's large enslaved population (which outnumbered white colonists) created constant fear AND the task system — which gave daily work quotas after which enslaved people had some time for themselves — created limited opportunities for organizing and community. 80 enslaved rebels burned 6 plantations in the 1739 uprising."},
+  {q:"What distinguished slavery in the Chesapeake from slavery in the Caribbean?",opts:["A) Chesapeake slavery was legally abolished a century earlier","B) Caribbean enslaved people received better legal protections","C) Chesapeake enslaved people lived in closer proximity to enslavers with comparatively less harsh conditions","D) The Chesapeake used gang labor exclusively while the Caribbean used the task system"],ans:2,exp:"Virginia/Chesapeake had smaller workforces where enslaved people often lived in close contact with white households, and some took on artisan or household roles. Caribbean sugar plantations had extremely harsh conditions and high mortality, constantly requiring new enslaved people."},
+  {q:"The Declaratory Act (1766) was passed to assert that:",opts:["A) Colonists had an inherent right to self-taxation","B) Parliament had authority to bind the colonies 'in all cases whatsoever'","C) The Stamp Act had been unconstitutional from the start","D) Only colonial assemblies could pass new taxes on colonists"],ans:1,exp:"Britain repealed the Stamp Act due to economic pressure from colonial boycotts, but simultaneously passed the Declaratory Act asserting total parliamentary sovereignty. This directly contradicted Locke's consent theory and the colonists' arguments about virtual vs. direct representation."},
+  {q:"What role did the Delaware Prophet Neolin play in Pontiac's War?",opts:["A) He led the military assault on Fort Detroit","B) He negotiated the peace settlement with General Amherst","C) He provided the spiritual vision urging rejection of European ways to unite tribes","D) He allied with the British against Pontiac's coalition"],ans:2,exp:"Neolin had a religious vision calling Native peoples to reject European trade goods, alcohol, and firearms and return to traditional practices. This spiritual framework united diverse tribes behind the uprising, demonstrating how Native peoples used both military and spiritual means to resist colonialism."},
+  {q:"Bacon's Rebellion (1676) resulted in what major long-term transformation in Virginia?",opts:["A) The expansion of voting rights to all free men","B) A fundamental shift from indentured servitude to African chattel slavery","C) Virginia's formal separation from British Crown authority","D) The establishment of the first colonial court system"],ans:1,exp:"The 1705 Virginia Slave Code formalized what Bacon's Rebellion accelerated: race-based chattel slavery. Planters moved away from indentured servants (who became dangerous when freed) toward African slaves controlled through permanent, hereditary racial hierarchy."},
+  {q:"Which of the following correctly describes the Middle Passage?",opts:["A) European goods transported from Britain to West Africa","B) Raw colonial materials shipped from the Americas back to Europe","C) The forced transport of enslaved Africans across the Atlantic to the Americas","D) The overland trade route connecting the Atlantic coast to the interior"],ans:2,exp:"The Middle Passage was Leg 2 of the Triangle Trade — the transport of enslaved Africans across the Atlantic. Of ~11 million who crossed between 1500–1820, approximately 8 million survived. 72% of all humans crossing the Atlantic in this period were enslaved Africans."},
+  {q:"The Powhatan Confederacy's 1622 Uprising was most significant because:",opts:["A) It permanently expelled English settlers from Virginia","B) It established 50 years of peace between colonists and the Confederacy","C) Its eventual defeat opened Virginia to unrestricted tobacco expansion and the demand for enslaved labor","D) It was the first armed conflict between colonists and any Native group"],ans:2,exp:"The 1622 attacks killed ~350 colonists but Jamestown survived. The Confederacy's eventual decline removed the primary Native barrier in the Virginia tidewater, opening land to tobacco expansion — which drove the demand that fueled the growth of African slavery."},
+  {q:"John Locke's Second Treatise of Government (1689) contributed to colonial revolutionary ideology primarily by arguing:",opts:["A) Kings rule by divine right and cannot legitimately be removed","B) Property rights are always secondary to government authority","C) If leaders deny people's natural rights, the governed may legitimately remove them","D) Only property-owning nobles have genuine political rights"],ans:2,exp:"Locke argued political power comes from the consent of the governed, not divine authority, and that people have natural rights to life, liberty, and property. If a ruler violates these, the governed may remove him. Jefferson's Declaration of Independence directly embodies this argument."},
+  {q:"The 'task system' used in South Carolina differed from Caribbean gang labor because:",opts:["A) Enslaved people worked in large supervised groups all day","B) Enslaved people completed a daily quota; remaining time was their own","C) Only skilled artisans were allowed to use the task system","D) The task system was invented in the Caribbean and copied in South Carolina"],ans:1,exp:"Unlike Caribbean gang labor (constant supervision from dawn to dusk), the South Carolina task system assigned a daily work quota. Completing it gave some enslaved people time for gardens, family, or small trade — creating limited but real daily autonomy, though still within a brutal system of bondage."},
+  {q:"The Halfway Covenant of 1662 revealed what central tension in Puritan New England?",opts:["A) Whether to allow Quakers to settle alongside Puritans","B) How to maintain church membership as the founding generation's children lacked personal conversion experiences","C) Whether the colony should support the English Civil War","D) How to handle relations with the Wampanoag"],ans:1,exp:"Puritan churches required a dramatic personal conversion experience for full membership. As the first generation aged, their baptized children who lacked such experiences were caught in limbo. The Halfway Covenant allowed partial membership — showing how religious institutions adapted to colonial social realities."},
+  {q:"Why did Virginia's elite shift to African chattel slavery SPECIFICALLY after Bacon's Rebellion?",opts:["A) Tobacco prices spiked, making enslaved labor suddenly cost-effective","B) The British Crown mandated enslaved labor in all tobacco colonies","C) Planters feared the multiracial poor coalition and chose racial slavery to divide it","D) Indentured servants formally refused to work tobacco fields after 1676"],ans:2,exp:"Bacon's Rebellion showed the danger of poor whites, servants, and some enslaved people uniting against the elite. The solution was twofold: improve conditions for poor free whites (reducing their grievances) and replace servants with African slaves — whose permanent, hereditary racial status prevented cross-racial coalition-building."},
+  {q:"The Stamp Act Congress (October 1765) was historically important because:",opts:["A) It declared American independence from Britain","B) It was the first organized multi-colony political response to British taxation","C) It immediately repealed the Stamp Act","D) It established the Continental Army and appointed George Washington as commander"],ans:1,exp:"27 delegates from 9 colonies met in New York City — the first organized inter-colonial political body. They drafted a petition asserting only colonial assemblies could tax colonists. This established the infrastructure (committees, boycotts, unified arguments) that would be used throughout the Revolution."},
+  {q:"The Haudenosaunee (Iroquois) Confederacy was significant as a political institution because:",opts:["A) It was formed in 1492 as a direct response to European contact","B) Founded ~1142, it was one of the oldest democratic confederacies in North America","C) It was formed in 1607 specifically to resist the Jamestown settlement","D) It only included two nations — the Mohawk and the Seneca"],ans:1,exp:"The Haudenosaunee Confederacy (Seneca, Cayuga, Onondaga, Oneida, Mohawk — later Tuscarora) was founded around 1142. Sullivan's Expedition (1779) effectively ended its unified power in the East, and the Revolution split it with some nations siding with Britain, others with America."},
+  {q:"Which sequence correctly describes Virginia's labor history?",opts:["A) Chattel slavery → indentured servitude → wage labor","B) Wage labor → chattel slavery → indentured servitude","C) Indentured servitude (1620s-1670s) → chattel slavery, accelerated by Bacon's Rebellion (1676)","D) Chattel slavery → indentured servitude → sharecropping"],ans:2,exp:"Virginia initially relied on indentured servants (1620s–1670s). After Bacon's Rebellion demonstrated the danger of freed servants, Virginia systematically shifted to African chattel slavery, codified permanently in the 1705 Slave Code."},
+  {q:"What most fundamentally distinguished northern from southern colonial development?",opts:["A) The North had slavery while the South relied on wage labor","B) The South developed town meeting democracy; the North had planter-dominated assemblies","C) The North grew around family migration and trade; the South around cash crops and plantation hierarchy","D) Northern colonies were all founded by joint-stock companies; southern colonies were all religious refuges"],ans:2,exp:"Southern colonies (especially Virginia) were founded for profit by joint-stock companies → tobacco/cash crops → plantation hierarchy → indentured then enslaved labor. New England was founded by religious refugees bringing families, establishing town meetings, and developing trade/fishing economies with more fluid social structures."}
+];
+
+const ID_TERMS = [
+  {term:"Powhatan Confederacy",points:["WHO: Wahunsenacah (Chief Powhatan), leader of ~30 Algonquian tribes in the Chesapeake region","WHAT: A powerful Native confederacy collecting tribute from ~100 villages; used diplomacy AND resistance","WHEN: Key events 1607–1622 (English contact period)","WHERE: Virginia tidewater region, James River area","WHY: Powhatan used English settlers strategically — wanted European trade goods; aware of Spanish/French threats; initially chose negotiation over war","SIG: Demonstrates complexity of early colonial contact; shows Native agency through both diplomacy and resistance; the Confederacy's demise opened Virginia to tobacco expansion and the slavery it required"]},
+  {term:"Anne Hutchinson",points:["WHO: Puritan woman, religious thinker, midwife in Massachusetts Bay Colony","WHAT: Held religious meetings at home, challenged Puritan clergy, claimed direct revelation from God — 'Antinomianism'","WHEN: 1636–1638","WHERE: Boston, Massachusetts Bay Colony","WHY: Puritanism gave clergy interpretive authority; Hutchinson's claims threatened both theocratic power and gender norms of the era","SIG: Shows the narrow limits of religious tolerance in Puritan New England; demonstrates how gender intersected with religious/political power in colonial America; contributed to founding of new colonies (Roger Williams' Rhode Island)"]},
+  {term:"The Triangle Trade",points:["WHO: European merchants, enslaved Africans, colonial planters, Caribbean sugar producers","WHAT: Three-leg transatlantic system — Leg 1: European goods to Africa; Leg 2: 'Middle Passage' (enslaved Africans to Americas); Leg 3: raw goods (sugar, tobacco, cotton) to Europe","WHEN: 16th–19th centuries, peak in the 1700s","WHERE: Atlantic Ocean connecting Europe, Africa, and the Americas","WHY: Colonial plantations needed massive permanent labor; African enslaved people were profitable; Europe demanded raw goods","SIG: Foundational to the entire Atlantic economy; Caribbean sugar was primary source of British wealth; 72% of Atlantic crossers 1500–1820 were enslaved; 11M crossed, 8M survived; directly fueled race-based chattel slavery in North America"]},
+  {term:"Indentured Servitude",points:["WHO: Poor English (later Irish/European) migrants; Virginia planters","WHAT: Contract-based labor — passage to the New World paid in exchange for 4–7 years of labor","WHEN: Primary Virginia labor system 1620s–1670s; declined sharply after Bacon's Rebellion (1676)","WHERE: Primarily Virginia and the Chesapeake; also Caribbean","WHY: England had population boom + enclosure movement creating jobless poor; Virginia needed cheap labor but couldn't yet afford slaves","SIG: Economic and social bridge between early colonial labor and chattel slavery; its decline DIRECTLY caused the expansion of African slavery; Bacon's Rebellion proved freed servants were dangerous, accelerating the transition"]},
+  {term:"Bacon's Rebellion",points:["WHO: Nathaniel Bacon (rebel leader), Governor William Berkeley, poor white farmers, indentured servants, some enslaved people","WHAT: Armed rebellion in Virginia — frontier colonists vs. planter elite; Jamestown burned","WHEN: 1676–1677","WHERE: Virginia","WHY: Berkeley profited from fur trade and refused attacks on Native Americans; multiracial coalition of poor whites and servants united against elite; Bacon dies of dysentery, rebellion collapses","SIG: Watershed moment in American history — showed danger of multiracial poor coalition; Virginia's elite response was to harden racial lines and expand African slavery; 1705 Slave Code codified slaves as property; marks transition from indentured servitude to chattel slavery as dominant labor system"]},
+  {term:"The Great Awakening",points:["WHO: George Whitefield (first American celebrity), Jonathan Edwards, thousands of ordinary colonists across all colonies","WHAT: Major religious revival emphasizing emotional, personal faith over formal church doctrine","WHEN: 1730s–1740s","WHERE: Throughout all 13 colonies — first truly inter-colonial cultural event","WHY: Weak religious institutions, rise of Deism, response to growing commercialism; 'Old Lights' (traditional clergy) vs. 'New Lights' (revivalists who questioned authority)","SIG: First major unifying cultural movement across all colonies; planted seeds of democratic thinking and anti-authoritarian sentiment; idea that all have a direct relationship with God = natural rights implication; proto-revolutionary; shift from 90% Anglican/Congregational (pre-1680) to 63% by 1740"]},
+  {term:"Royal Proclamation of 1763",points:["WHO: King George III, colonists seeking western land, Native peoples of the trans-Appalachian region","WHAT: British decree forbidding colonists from settling west of the Appalachian Mountains","WHEN: 1763, immediately after the Peace of Paris ended the French & Indian War","WHERE: North America — the Appalachian Mountain boundary line","WHY: Needed to stabilize relations with Native allies after French & Indian War; Pontiac's War proved how dangerous frontier conflict could be; also controlled westward expansion and tax revenue","SIG: Deeply angered colonists who fought expecting western land rights; Virginia elites like Washington had already invested in western land companies; seen as British overreach; became one of the earliest and most tangible grievances leading to the Revolution"]},
+  {term:"Pontiac's War",points:["WHO: Ottawa war leader Pontiac, Delaware Prophet Neolin, inter-tribal coalition; British forces under General Amherst","WHAT: Major Native American uprising against British rule in the Great Lakes/Ohio Valley region","WHEN: 1763–1766","WHERE: Great Lakes region, Ohio Valley, Fort Detroit area","WHY: British victory over French eliminated Native ability to play European powers against each other; Amherst stopped gift-giving tradition, lowered fur prices, refused to trade guns/ammo; Neolin's spiritual vision called for rejecting European ways; Pontiac led ~900 warriors against Fort Detroit","SIG: DIRECTLY caused the Royal Proclamation of 1763; shows Native peoples used both military and spiritual means to resist colonialism; demonstrates the devastating impact of losing French allies on Native sovereignty"]},
+  {term:"The Stamp Act",points:["WHO: British Parliament (Lord Grenville), American colonists, Sons and Daughters of Liberty","WHAT: Tax on ALL paper items — newspapers, legal documents, playing cards — requiring a royal stamp","WHEN: 1765 (repealed 1766); Declaratory Act passed simultaneously","WHERE: All 13 colonies","WHY: Britain doubled its debt from the French & Indian War; colonial defense costs increased 5x; Parliament sought to have colonies pay for their own defense","SIG: First major test of colonial unity; established the principle of 'no taxation without representation'; created the organized resistance infrastructure (Stamp Act Congress, committees, boycotts) that would be used throughout the Revolution; virtual vs. direct representation debate clarified colonial ideology"]},
+  {term:"Common Sense",points:["WHO: Thomas Paine, pamphlet writer; colonial reading public — ordinary colonists, not just elites","WHAT: Influential political pamphlet arguing for American independence from Britain","WHEN: January 1776","WHERE: Published in Philadelphia; read throughout all colonies","WHY: King George III declared state of rebellion December 1775; many colonists still hoped for reconciliation; Paine sought to shift mass opinion using biblical + rational + common law arguments","SIG: Massively shifted public opinion toward independence; accessible to ordinary colonists (not just elites); sold 100,000+ copies in months; synthesized English common law, Lockean Enlightenment, and Republicanism for a mass audience; directly influenced the Declaration of Independence"]},
+  {term:"Sullivan's Expedition",points:["WHO: General John Sullivan (Continental Army), under Washington's direct orders; Haudenosaunee — mainly Seneca, Cayuga, Mohawk","WHAT: Major American military campaign to systematically destroy Iroquois villages in New York and Pennsylvania","WHEN: 1779","WHERE: Western New York and Pennsylvania","WHY: British-allied Haudenosaunee were raiding American frontier settlements; Washington ordered total destruction of their homeland to eliminate the military threat permanently","SIG: Reveals that the Revolution was simultaneously a brutal civil war for Native peoples; ~40 Iroquois villages burned, crops destroyed, thousands of Native refugees fled to Canada; Haudenosaunee Confederacy (founded ~1142) was split and effectively ended as a major Eastern power; Washington earned the Seneca name 'Town Destroyer'"]},
+  {term:"Jane McCrea",points:["WHO: Young American woman, fiancée of a Loyalist officer","WHAT: Murdered and scalped while traveling to join her Loyalist fiancé — killed by British-allied Native escorts during Burgoyne's campaign","WHEN: 1777","WHERE: Upstate New York, near Fort Edward","WHY: Was traveling under Native escort to reach her Tory fiancé with British forces when killed; exact circumstances disputed","SIG: Her death became massive Patriot propaganda — symbolized British brutality and their use of 'savage' Native allies; galvanized undecided colonists (fence-sitters) to join the Patriot cause; contributed to momentum leading to the crucial American victory at Saratoga; demonstrates how individual tragic stories became powerful political tools in the Revolution"]},
+  {term:"Articles of Confederation",points:["WHO: Continental Congress, all 13 states","WHAT: First governing document of the United States — created a loose confederation of largely independent states","WHEN: Ratified 1781; replaced by the Constitution in 1789","WHERE: United States of America","WHY: States feared strong central government after fighting British tyranny; wanted sovereignty to remain at the state level","SIG: Its critical weaknesses — no power to tax, no executive branch, no national army, no national court system, each state had 1 vote, 9/13 needed for laws, unanimous for amendments — led to crises (Shays' Rebellion, debt) that forced the Constitutional Convention of 1787; the debate over strong vs. weak central government it exposed defines American politics to this day"]}
+];
+
+const ESSAY_Qs = [
+  {q:"Essay Prep — Rights & the Revolution\n\nName and briefly explain the THREE main intellectual traditions colonists drew on to justify resistance to Britain. Give one specific historical example for each.",points:["English Common Law / 1688 Bill of Rights: parliamentary consent required for taxation; colonists as Englishmen had these rights → Stamp Act (1765) was a direct violation; Stamp Act Congress cited these rights","Enlightenment / Locke's 2nd Treatise (1689): natural rights, consent of governed, right to remove unjust rulers → Jefferson's Declaration directly embodies Locke's framework","Republicanism / Commonwealthmen: power corrupts, liberty must be checked, distrust of established elites → Great Awakening reinforced this anti-authoritarian sentiment","Common Sense (Paine, 1776) synthesized all three traditions for ordinary colonists using biblical + rational + common law arguments"]},
+  {q:"Essay Prep — Slavery Across Geographies\n\nHow did slavery in the Caribbean DIFFER from slavery in the Chesapeake? Give at least two specific differences and explain WHY those differences existed.",points:["Caribbean: extreme conditions, high mortality, sugar required massive gang labor, constant need for new enslaved people, 1661 Barbados Slave Code set the legal template for all of colonial slavery","Chesapeake/Virginia: smaller workforces, enslaved people lived in closer proximity to white households, some took on artisan or household roles, tobacco economy less lethal than sugar","Why different: crop type + labor demands (sugar required massive gang labor vs. tobacco's smaller-scale cultivation), population ratios (Caribbean had enslaved majority = more fear + stricter control)","South Carolina as a middle case: rice cultivation (Africans brought knowledge), task system (daily quota = some autonomy), 1739 Stono Rebellion, 1740 Negro Act in response"]},
+  {q:"Essay Prep — North vs. South\n\nWhat were the two MOST IMPORTANT reasons northern and southern colonies developed differently? Give one specific historical example for each reason.",points:["Founding motivation: South (Virginia) = joint-stock company profit motive → tobacco cash crop, plantation hierarchy, rigid social structure; North (New England) = Puritan religious refuge → community-centered, self-governing town meetings, family migration","Geography/Economy: South's warm climate → cash crops requiring large labor forces → indentured servitude then chattel slavery; North's rocky soil/shorter season → small farms, fishing, Atlantic trade, artisan economy","Labor systems: South went indentured servitude → chattel slavery (Bacon's Rebellion 1676 / 1705 Slave Code); North used family/artisan labor with smaller-scale slavery and fewer restrictions","Social structure: South = rigid hierarchy (planters/enslaved); North = more fluid (freeholders, artisans, skilled workers)"]},
+  {q:"Quick Concept: 1619\n\nWhat TWO major things happened in Virginia in 1619, and why does this year matter to the broader American historical narrative?",points:["First enslaved Africans arrived in Virginia (20–30 people) — the beginning of African slavery in English North America","First elected colonial assembly (Virginia House of Burgesses) met — the beginning of representative self-government in the colonies","Historical significance: these two events occurring in the same year capture the central tension in American history — democratic governance and slavery growing simultaneously from the very beginning"]},
+  {q:"Quick Concept: Old Lights vs. New Lights\n\nExplain the Old Lights vs. New Lights divide during the Great Awakening. What did each side believe, and why did this dispute have political consequences beyond religion?",points:["Old Lights: traditional Congregational/Anglican clergy who feared loss of authority; saw emotional revivalism as dangerous and destabilizing to social order","New Lights: revivalists who embraced emotional direct connection with God; questioned established religious authority; promoted idea that all people have a personal relationship with God","Political significance: New Lights' promotion of personal spiritual authority and distrust of established elites planted proto-democratic, anti-authoritarian sentiment that fed directly into Revolutionary ideology — 'all have natural rights' was the political extension of 'all have a direct relationship with God'"]}
+];
+
+let mode = 'mc', score = 0, total = 0, streak = 0, qCount = 0;
+let sMC = [], sID = [], sEssay = [], mi = 0, ii = 0, ei = 0;
+let answered = false;
+
+function selectMode(el) {
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  mode = el.dataset.mode;
+}
+
+function shuffle(a) {
+  const b = [...a];
+  for (let i = b.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [b[i], b[j]] = [b[j], b[i]];
+  }
+  return b;
+}
+
+function startQuiz() {
+  sMC = shuffle(MC); sID = shuffle(ID_TERMS); sEssay = shuffle(ESSAY_Qs);
+  mi = 0; ii = 0; ei = 0;
+  score = 0; total = 0; streak = 0; qCount = 0;
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('quiz').style.display = 'block';
+  updateBar();
+  loadQ();
+}
+
+function pickType() {
+  if (mode === 'mc') return 'mc';
+  if (mode === 'id') return 'id';
+  const r = Math.random();
+  return r < 0.5 ? 'mc' : r < 0.8 ? 'id' : 'essay';
+}
+
+function loadQ() {
+  answered = false;
+  qCount++;
+  const fb = document.getElementById('fb');
+  fb.className = 'feedback';
+  fb.innerHTML = '';
+  document.getElementById('acts').style.display = 'none';
+  document.getElementById('mc-opts').style.display = 'none';
+  document.getElementById('sa-area').style.display = 'none';
+  document.getElementById('mc-opts').innerHTML = '';
+
+  const type = pickType();
+
+  if (type === 'mc') {
+    const q = sMC[mi % sMC.length]; mi++;
+    document.getElementById('badge').textContent = 'Multiple Choice';
+    document.getElementById('qnum').textContent = 'Question ' + qCount;
+    document.getElementById('qtext').textContent = q.q;
+    const grid = document.getElementById('mc-opts');
+    grid.style.display = 'grid';
+    q.opts.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.textContent = opt;
+      btn.onclick = () => pickOpt(btn, i, q.ans, q.exp, q.opts);
+      grid.appendChild(btn);
+    });
+  } else if (type === 'id') {
+    const id = sID[ii % sID.length]; ii++;
+    document.getElementById('badge').textContent = 'ID Term';
+    document.getElementById('qnum').textContent = 'Question ' + qCount;
+    document.getElementById('qtext').textContent = 'Identify and explain: ' + id.term + '\n\nInclude: Who, What, When, Where, Why it happened, and Historical Significance.';
+    const sa = document.getElementById('sa-area');
+    sa.style.display = 'flex';
+    document.getElementById('user-ans').value = '';
+    document.getElementById('user-ans').disabled = false;
+    const btn = document.getElementById('sa-btn');
+    btn.disabled = false;
+    btn.onclick = () => gradeID(id);
+  } else {
+    const eq = sEssay[ei % sEssay.length]; ei++;
+    document.getElementById('badge').textContent = 'Essay Prep';
+    document.getElementById('qnum').textContent = 'Question ' + qCount;
+    document.getElementById('qtext').textContent = eq.q;
+    const sa = document.getElementById('sa-area');
+    sa.style.display = 'flex';
+    document.getElementById('user-ans').value = '';
+    document.getElementById('user-ans').disabled = false;
+    const btn = document.getElementById('sa-btn');
+    btn.disabled = false;
+    btn.onclick = () => gradeEssay(eq);
+  }
+}
+
+function pickOpt(btn, idx, ans, exp, opts) {
+  if (answered) return;
+  answered = true;
+  total++;
+  document.querySelectorAll('.option-btn').forEach((b, i) => {
+    b.disabled = true;
+    if (i === ans) b.classList.add('correct');
+    else if (i === idx) b.classList.add('wrong');
+  });
+  const fb = document.getElementById('fb');
+  if (idx === ans) {
+    score++; streak++;
+    fb.className = 'feedback correct show';
+    fb.innerHTML = '✓ Correct! ' + exp;
+  } else {
+    streak = 0;
+    fb.className = 'feedback wrong show';
+    fb.innerHTML = '✗ Incorrect. The right answer was <strong>' + opts[ans] + '</strong>.<br><br>' + exp;
+  }
+  updateBar(); showNext();
+}
+
+function gradeID(id) {
+  const ans = document.getElementById('user-ans').value.trim();
+  if (!ans) return;
+  answered = true; total++;
+  document.getElementById('user-ans').disabled = true;
+  document.getElementById('sa-btn').disabled = true;
+
+  const lower = ans.toLowerCase();
+  const keywords = id.points.flatMap(p => {
+    const content = (p.split(':')[1] || p).toLowerCase();
+    return content.split(/[\s,;.()]+/).filter(w => w.length > 5);
+  });
+  const unique = [...new Set(keywords)].slice(0, 20);
+  const hits = unique.filter(w => lower.includes(w)).length;
+  const pct = hits / Math.min(unique.length, 12);
+
+  const fb = document.getElementById('fb');
+  if (pct >= 0.4) {
+    score++; streak++;
+    fb.className = 'feedback correct show';
+    fb.innerHTML = '✓ Good answer! Compare with the key points below:';
+  } else if (pct >= 0.18) {
+    score += 0.5; streak = 0;
+    fb.className = 'feedback partial show';
+    fb.innerHTML = '~ Partial credit — you got some of it. Here\'s the full picture:';
+  } else {
+    streak = 0;
+    fb.className = 'feedback wrong show';
+    fb.innerHTML = '✗ Missing key details. Study these points for <strong>' + id.term + '</strong>:';
+  }
+  const kp = document.createElement('div');
+  kp.className = 'key-points';
+  kp.innerHTML = '<p>Key Points — ' + id.term + '</p><ul>' + id.points.map(p => '<li>' + p + '</li>').join('') + '</ul>';
+  fb.appendChild(kp);
+  updateBar(); showNext();
+}
+
+function gradeEssay(eq) {
+  const ans = document.getElementById('user-ans').value.trim();
+  if (!ans) return;
+  answered = true; total++;
+  document.getElementById('user-ans').disabled = true;
+  document.getElementById('sa-btn').disabled = true;
+
+  const lower = ans.toLowerCase();
+  const hits = eq.points.filter(p => {
+    const words = (p.split(':')[1] || p).toLowerCase().split(/[\s,;.()]+/).filter(w => w.length > 5);
+    return words.some(w => lower.includes(w));
+  }).length;
+  const pct = hits / eq.points.length;
+
+  const fb = document.getElementById('fb');
+  if (pct >= 0.5) {
+    score++; streak++;
+    fb.className = 'feedback correct show';
+    fb.innerHTML = '✓ Strong response! Compare with these key elements:';
+  } else if (pct >= 0.25) {
+    score += 0.5; streak = 0;
+    fb.className = 'feedback partial show';
+    fb.innerHTML = '~ You hit some points. Here\'s what a complete answer covers:';
+  } else {
+    streak = 0;
+    fb.className = 'feedback wrong show';
+    fb.innerHTML = '✗ Missing key elements. A strong answer covers all of these:';
+  }
+  const kp = document.createElement('div');
+  kp.className = 'key-points';
+  kp.innerHTML = '<p>Key Elements</p><ul>' + eq.points.map(p => '<li>' + p + '</li>').join('') + '</ul>';
+  fb.appendChild(kp);
+  updateBar(); showNext();
+}
+
+function showNext() {
+  document.getElementById('acts').style.display = 'flex';
+  document.getElementById('nxt').textContent = qCount >= 25 ? 'Finish Session →' : 'Next Question →';
+}
+
+function nextQ() {
+  if (qCount >= 25) { endQuiz(); return; }
+  loadQ();
+}
+
+function updateBar() {
+  document.getElementById('score-num').textContent = Math.round(score * 10) / 10;
+  document.getElementById('total-num').textContent = total;
+  document.getElementById('prog').style.width = Math.min(qCount * 4, 100) + '%';
+  document.getElementById('streak').textContent = streak >= 3 ? '🔥 ' + streak + ' streak' : '';
+}
+
+function endQuiz() {
+  document.getElementById('quiz').style.display = 'none';
+  document.getElementById('summary').style.display = 'block';
+  const pct = total === 0 ? 0 : Math.round((score / total) * 100);
+  let g, l;
+  if (pct >= 90) { g = 'A'; l = "You know this cold — exam is yours."; }
+  else if (pct >= 80) { g = 'B'; l = 'Solid — quick review of missed terms and you\'re ready.'; }
+  else if (pct >= 70) { g = 'C'; l = 'Decent — focus on the ID terms and dates you missed.'; }
+  else if (pct >= 60) { g = 'D'; l = 'Hit the study guide harder tonight.'; }
+  else { g = 'F'; l = 'Start from the top — go term by term slowly.'; }
+  document.getElementById('sg').textContent = g;
+  document.getElementById('sl').textContent = Math.round(score * 10) / 10 + '/' + total + ' correct — ' + pct + '%. ' + l;
+  document.getElementById('ss').innerHTML =
+    '<div class="stat"><div class="val">' + qCount + '</div><div class="lbl">Questions</div></div>' +
+    '<div class="stat"><div class="val">' + pct + '%</div><div class="lbl">Accuracy</div></div>' +
+    '<div class="stat"><div class="val">' + streak + '</div><div class="lbl">Final Streak</div></div>';
+}
+
+function restart() {
+  score = 0; total = 0; streak = 0; qCount = 0;
+  document.getElementById('summary').style.display = 'none';
+  document.getElementById('setup').style.display = 'block';
+  updateBar();
+}
+</script>
+</body>
+</html>
